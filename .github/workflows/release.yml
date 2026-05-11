@@ -9,6 +9,10 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     name: "Test"
@@ -63,21 +67,12 @@ jobs:
             --bin aish-tui \
             --bin aishd
 
-      - name: Prepare artifacts (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Prepare artifacts
         run: |
           mkdir -p dist
           cp target/${{ matrix.target }}/release/aish dist/
           cp target/${{ matrix.target }}/release/aish-tui dist/
           cp target/${{ matrix.target }}/release/aishd dist/
-
-      - name: Prepare artifacts (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          mkdir dist
-          copy target\${{ matrix.target }}\release\aish.exe dist\
-          copy target\${{ matrix.target }}\release\aish-tui.exe dist\
-          copy target\${{ matrix.target }}\release\aishd.exe dist\
 
       - name: Package (Unix)
         if: matrix.os != 'windows-latest'

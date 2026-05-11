@@ -147,11 +147,11 @@ ApplicationWindow {
         }
     }
 
-    footer: StatusBar {
+    footer: ToolBar {
         RowLayout {
             Label { text: "Ready" }
             Item { Layout.fillWidth: true }
-            Label { text: "FPS: 60" }
+            Label { text: "v0.1.0" }
         }
     }
 }

@@ -153,7 +153,7 @@ impl TaskScheduler {
             .map(|entry| entry.value().clone())
             .collect();
 
-        tasks.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        tasks.sort_by_key(|b| std::cmp::Reverse(b.created_at));
 
         let offset = filter.offset.unwrap_or(0);
         let limit = filter.limit.unwrap_or(100);

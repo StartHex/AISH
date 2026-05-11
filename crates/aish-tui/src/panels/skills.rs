@@ -13,7 +13,11 @@ pub fn render_skills(f: &mut Frame, app: &App, area: Rect) {
         .iter()
         .map(|s| {
             let status = if s.loaded { "loaded" } else { "not loaded" };
-            let _ = if s.loaded { Color::Green } else { Color::DarkGray };
+            let _ = if s.loaded {
+                Color::Green
+            } else {
+                Color::DarkGray
+            };
 
             Row::new(vec![
                 s.name.clone(),
@@ -34,8 +38,11 @@ pub fn render_skills(f: &mut Frame, app: &App, area: Rect) {
 
     let table = Table::new(rows, widths)
         .header(
-            Row::new(vec!["Name", "Description", "Status", "Calls"])
-                .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Row::new(vec!["Name", "Description", "Status", "Calls"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
         )
         .block(Block::default().borders(Borders::ALL).title(" Skills "))
         .column_spacing(2);

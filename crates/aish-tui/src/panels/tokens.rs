@@ -19,10 +19,7 @@ pub fn render_tokens(f: &mut Frame, app: &App, area: Rect) {
         " [T] Today  [M] Month  [A] All    Window: Today",
         Style::default().fg(Color::DarkGray),
     ));
-    f.render_widget(
-        Paragraph::new(window_hint),
-        chunks[0],
-    );
+    f.render_widget(Paragraph::new(window_hint), chunks[0]);
 
     if let Some(ref summary) = app.token_summary {
         // Summary cards
@@ -36,22 +33,31 @@ pub fn render_tokens(f: &mut Frame, app: &App, area: Rect) {
             .split(chunks[1]);
 
         // Input card
-        let input_card = Paragraph::new(format!("\n  Input\n  {}k tokens", summary.total_input / 1000))
-            .block(Block::default().borders(Borders::ALL).title(" In "))
-            .style(Style::default().fg(Color::Cyan))
-            .centered();
+        let input_card = Paragraph::new(format!(
+            "\n  Input\n  {}k tokens",
+            summary.total_input / 1000
+        ))
+        .block(Block::default().borders(Borders::ALL).title(" In "))
+        .style(Style::default().fg(Color::Cyan))
+        .centered();
         f.render_widget(input_card, cards_area[0]);
 
         // Output card
-        let output_card = Paragraph::new(format!("\n  Output\n  {}k tokens", summary.total_output / 1000))
-            .block(Block::default().borders(Borders::ALL).title(" Out "))
-            .style(Style::default().fg(Color::Magenta))
-            .centered();
+        let output_card = Paragraph::new(format!(
+            "\n  Output\n  {}k tokens",
+            summary.total_output / 1000
+        ))
+        .block(Block::default().borders(Borders::ALL).title(" Out "))
+        .style(Style::default().fg(Color::Magenta))
+        .centered();
         f.render_widget(output_card, cards_area[1]);
 
         // No pricing — just ratio
         let ratio = if summary.total_output > 0 {
-            format!("{:.2}:1", summary.total_input as f64 / summary.total_output as f64)
+            format!(
+                "{:.2}:1",
+                summary.total_input as f64 / summary.total_output as f64
+            )
         } else {
             "--".into()
         };
@@ -92,8 +98,11 @@ pub fn render_tokens(f: &mut Frame, app: &App, area: Rect) {
             ],
         )
         .header(
-            Row::new(vec!["Model", "Input", "Output", "Total"])
-                .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Row::new(vec!["Model", "Input", "Output", "Total"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
         )
         .block(Block::default().borders(Borders::ALL));
     }

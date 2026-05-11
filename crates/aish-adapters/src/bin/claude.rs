@@ -94,7 +94,8 @@ fn build_claude_server(args: Args) -> McpServer {
 
     // --- agent.list_models ---
     server.register_tool(
-        "agent.list_models", "List available Claude models",
+        "agent.list_models",
+        "List available Claude models",
         json!({}),
         |_| async move {
             Ok(json_content(json!([
@@ -109,15 +110,23 @@ fn build_claude_server(args: Args) -> McpServer {
     // --- agent.set_model ---
     {
         let s = state.clone();
-        server.register_tool("agent.set_model", "Switch Claude model", json!({"model":"string"}), move |args| {
-            let s = s.clone();
-            async move {
-                let new_model = args["model"].as_str().unwrap_or("claude-sonnet-4-6").to_string();
-                let old = s.model.lock().await.clone();
-                *s.model.lock().await = new_model.clone();
-                Ok(text_content(&format!("Model: {} → {}", old, new_model)))
-            }
-        });
+        server.register_tool(
+            "agent.set_model",
+            "Switch Claude model",
+            json!({"model":"string"}),
+            move |args| {
+                let s = s.clone();
+                async move {
+                    let new_model = args["model"]
+                        .as_str()
+                        .unwrap_or("claude-sonnet-4-6")
+                        .to_string();
+                    let old = s.model.lock().await.clone();
+                    *s.model.lock().await = new_model.clone();
+                    Ok(text_content(&format!("Model: {} → {}", old, new_model)))
+                }
+            },
+        );
     }
 
     // --- agent.permissions ---
@@ -152,25 +161,33 @@ fn build_claude_server(args: Args) -> McpServer {
     });
 
     // --- agent.mcp_servers ---
-    server.register_tool("agent.mcp_servers", "List MCP servers", json!({}), |_| async move {
-        Ok(json_content(json!([])))
-    });
+    server.register_tool(
+        "agent.mcp_servers",
+        "List MCP servers",
+        json!({}),
+        |_| async move { Ok(json_content(json!([]))) },
+    );
 
     // --- agent.token_usage ---
     {
         let s = state.clone();
-        server.register_tool("agent.token_usage", "Get token usage", json!({"window":"string"}), move |_| {
-            let s = s.clone();
-            async move {
-                let input = s.token_input.load(std::sync::atomic::Ordering::Relaxed);
-                let output = s.token_output.load(std::sync::atomic::Ordering::Relaxed);
-                Ok(json_content(json!({
-                    "total_input": input,
-                    "total_output": output,
-                    "by_model": {},
-                })))
-            }
-        });
+        server.register_tool(
+            "agent.token_usage",
+            "Get token usage",
+            json!({"window":"string"}),
+            move |_| {
+                let s = s.clone();
+                async move {
+                    let input = s.token_input.load(std::sync::atomic::Ordering::Relaxed);
+                    let output = s.token_output.load(std::sync::atomic::Ordering::Relaxed);
+                    Ok(json_content(json!({
+                        "total_input": input,
+                        "total_output": output,
+                        "by_model": {},
+                    })))
+                }
+            },
+        );
     }
 
     // --- task.submit (the key method: spawns claude) ---
@@ -184,7 +201,8 @@ fn build_claude_server(args: Args) -> McpServer {
                 let s = s.clone();
                 // Extract values before moving into async block
                 let prompt = tool_args["prompt"].as_str().unwrap_or("").to_string();
-                let model = tool_args.get("model")
+                let model = tool_args
+                    .get("model")
                     .and_then(|m| m.as_str())
                     .unwrap_or("claude-sonnet-4-6")
                     .to_string();
@@ -209,7 +227,8 @@ fn build_claude_server(args: Args) -> McpServer {
                             .arg("text")
                             .current_dir(project_dir.unwrap_or_else(|| ".".into()))
                             .output()
-                    }).await;
+                    })
+                    .await;
 
                     match result {
                         Ok(Ok(output)) => {
@@ -217,8 +236,10 @@ fn build_claude_server(args: Args) -> McpServer {
                             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
                             let output_tokens = (stdout.len() as u64) / 4;
-                            s.token_input.fetch_add(input_tokens_est, std::sync::atomic::Ordering::Relaxed);
-                            s.token_output.fetch_add(output_tokens, std::sync::atomic::Ordering::Relaxed);
+                            s.token_input
+                                .fetch_add(input_tokens_est, std::sync::atomic::Ordering::Relaxed);
+                            s.token_output
+                                .fetch_add(output_tokens, std::sync::atomic::Ordering::Relaxed);
 
                             // Remove from active
                             s.active_tasks.lock().await.retain(|t| t != &task_id);
@@ -268,34 +289,60 @@ fn build_claude_server(args: Args) -> McpServer {
     // --- task.cancel ---
     {
         let s = state.clone();
-        server.register_tool("task.cancel", "Cancel a task", json!({"task_id":"string"}), move |args| {
-            let tid = args["task_id"].as_str().unwrap_or("").to_string();
-            let s = s.clone();
-            async move {
-                let mut tasks = s.active_tasks.lock().await;
-                if tasks.contains(&tid) {
-                    tasks.retain(|t| t != &tid);
-                    Ok(text_content(&format!("Task {} cancelled", tid)))
-                } else {
-                    Ok(text_content(&format!("Task {} not found", tid)))
+        server.register_tool(
+            "task.cancel",
+            "Cancel a task",
+            json!({"task_id":"string"}),
+            move |args| {
+                let tid = args["task_id"].as_str().unwrap_or("").to_string();
+                let s = s.clone();
+                async move {
+                    let mut tasks = s.active_tasks.lock().await;
+                    if tasks.contains(&tid) {
+                        tasks.retain(|t| t != &tid);
+                        Ok(text_content(&format!("Task {} cancelled", tid)))
+                    } else {
+                        Ok(text_content(&format!("Task {} not found", tid)))
+                    }
                 }
-            }
-        });
+            },
+        );
     }
 
     // --- adapter metadata ---
-    server.register_tool("adapter.version", "Get adapter version", json!({}), |_| async move {
-        Ok(text_content(concat!("claude-code-adapter v", env!("CARGO_PKG_VERSION"))))
-    });
+    server.register_tool(
+        "adapter.version",
+        "Get adapter version",
+        json!({}),
+        |_| async move {
+            Ok(text_content(concat!(
+                "claude-code-adapter v",
+                env!("CARGO_PKG_VERSION")
+            )))
+        },
+    );
 
-    server.register_tool("adapter.capabilities", "Get adapter capabilities", json!({}), |_| async move {
-        Ok(json_content(json!([
-            "agent.status", "agent.list_models", "agent.set_model",
-            "agent.permissions", "agent.skills", "agent.mcp_servers",
-            "agent.token_usage", "task.submit", "task.list", "task.cancel",
-            "adapter.version", "adapter.capabilities",
-        ])))
-    });
+    server.register_tool(
+        "adapter.capabilities",
+        "Get adapter capabilities",
+        json!({}),
+        |_| async move {
+            Ok(json_content(json!([
+                "agent.status",
+                "agent.list_models",
+                "agent.set_model",
+                "agent.permissions",
+                "agent.skills",
+                "agent.mcp_servers",
+                "agent.token_usage",
+                "task.submit",
+                "task.list",
+                "task.cancel",
+                "adapter.version",
+                "adapter.capabilities",
+            ])))
+        },
+    );
 
     server
 }

@@ -38,19 +38,14 @@ impl SshConfig {
     /// Build the ssh command and its arguments for executing a remote command.
     /// The remote command's stdin/stdout will be connected through the SSH pipe.
     pub fn to_command(&self, remote_command: &str) -> (String, Vec<String>) {
-        let mut args: Vec<String> = vec![];
-
-        // Batch mode: don't prompt for password
-        args.push("-o".into());
-        args.push("BatchMode=yes".into());
-
-        // Connection timeout
-        args.push("-o".into());
-        args.push("ConnectTimeout=10".into());
-
-        // Server alive interval to detect dead connections
-        args.push("-o".into());
-        args.push("ServerAliveInterval=30".into());
+        let mut args = vec![
+            "-o".to_string(),
+            "BatchMode=yes".to_string(),
+            "-o".to_string(),
+            "ConnectTimeout=10".to_string(),
+            "-o".to_string(),
+            "ServerAliveInterval=30".to_string(),
+        ];
 
         // Port
         if self.port != 22 {

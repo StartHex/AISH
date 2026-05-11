@@ -28,7 +28,9 @@ pub fn render_models(f: &mut Frame, app: &App, area: Rect) {
                 .unwrap_or_else(|| "--".into());
 
             let style = if m.is_current {
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Gray)
             };
@@ -52,8 +54,11 @@ pub fn render_models(f: &mut Frame, app: &App, area: Rect) {
 
     let table = Table::new(rows, widths)
         .header(
-            Row::new(vec!["", "Model", "Provider", "Context"])
-                .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Row::new(vec!["", "Model", "Provider", "Context"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
         )
         .block(Block::default().borders(Borders::ALL).title(" Models "))
         .column_spacing(2);

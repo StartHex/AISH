@@ -52,11 +52,7 @@ impl TaskScheduler {
     }
 
     /// Fan-out: submit the same task to multiple agents.
-    pub fn submit_all(
-        &self,
-        agents: &[AgentId],
-        req: TaskRequest,
-    ) -> Vec<TaskId> {
+    pub fn submit_all(&self, agents: &[AgentId], req: TaskRequest) -> Vec<TaskId> {
         agents
             .iter()
             .map(|agent_id| self.submit(agent_id, req.clone()))
@@ -168,7 +164,9 @@ impl TaskScheduler {
     pub fn count_by_status(&self, status: TaskStatus) -> usize {
         self.tasks
             .iter()
-            .filter(|entry| std::mem::discriminant(&entry.status) == std::mem::discriminant(&status))
+            .filter(|entry| {
+                std::mem::discriminant(&entry.status) == std::mem::discriminant(&status)
+            })
             .count()
     }
 }

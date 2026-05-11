@@ -33,7 +33,9 @@ pub fn default_db_path() -> std::path::PathBuf {
     if let Ok(path) = std::env::var("AISH_DB_PATH") {
         std::path::PathBuf::from(path)
     } else if let Ok(band_root) = std::env::var("AISH_BAND_ROOT") {
-        std::path::PathBuf::from(band_root).join("data").join("aish.db")
+        std::path::PathBuf::from(band_root)
+            .join("data")
+            .join("aish.db")
     } else {
         dirs::data_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("."))

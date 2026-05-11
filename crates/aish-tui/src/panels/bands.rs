@@ -37,8 +37,11 @@ pub fn render_bands(f: &mut Frame, app: &App, area: Rect) {
 
     let table = Table::new(rows, widths)
         .header(
-            Row::new(vec!["Name", "Isolation", "Root", "Status"])
-                .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Row::new(vec!["Name", "Isolation", "Root", "Status"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
         )
         .block(Block::default().borders(Borders::ALL).title(" Bands "))
         .column_spacing(2);

@@ -19,7 +19,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 #[derive(Parser)]
-#[command(name = "aish", version, about = "AI Agent Shell — manage AI coding agents")]
+#[command(
+    name = "aish",
+    version,
+    about = "AI Agent Shell — manage AI coding agents"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -132,9 +136,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let cli = Cli::parse();
 
-    let config_dir = cli
-        .config_dir
-        .unwrap_or_else(aish_core::config::config_dir);
+    let config_dir = cli.config_dir.unwrap_or_else(aish_core::config::config_dir);
     std::fs::create_dir_all(&config_dir)?;
 
     let event_bus = Arc::new(EventBus::default());
@@ -201,7 +203,9 @@ async fn main() -> Result<()> {
             AgentCommand::List => {
                 let agents = registry.list();
                 if agents.is_empty() {
-                    println!("No agents registered. Add one with: aish agent add --type claude-code");
+                    println!(
+                        "No agents registered. Add one with: aish agent add --type claude-code"
+                    );
                 } else {
                     println!("{:<30} {:<15} {:?}", "ID", "STATUS", "MODEL");
                     println!("{}", "-".repeat(60));
@@ -243,11 +247,7 @@ async fn main() -> Result<()> {
                 user,
                 model,
             } => {
-                let id = format!(
-                    "{}/{}",
-                    mode,
-                    name.as_deref().unwrap_or(&r#type)
-                );
+                let id = format!("{}/{}", mode, name.as_deref().unwrap_or(&r#type));
 
                 let transport = if mode == "remote" {
                     aish_core::config::TransportConfig::Ssh {
@@ -281,7 +281,8 @@ async fn main() -> Result<()> {
                     AdaptersConfig { adapters: vec![] }
                 };
                 config.adapters.push(def.clone());
-                let ron_str = ron::ser::to_string_pretty(&config, ron::ser::PrettyConfig::default())?;
+                let ron_str =
+                    ron::ser::to_string_pretty(&config, ron::ser::PrettyConfig::default())?;
                 std::fs::write(&adapters_path, ron_str)?;
 
                 registry.register(&def);
@@ -297,7 +298,7 @@ async fn main() -> Result<()> {
                     if bands.is_empty() {
                         println!("No bands. Create one with: aish band create <name>");
                     } else {
-                        println!("{:<20} {:<15} {}", "NAME", "ISOLATION", "CREATED");
+                        println!("{:<20} {:<15} CREATED", "NAME", "ISOLATION");
                         println!("{}", "-".repeat(60));
                         for band in &bands {
                             println!(
@@ -319,11 +320,19 @@ async fn main() -> Result<()> {
                     println!("Root:       {}", status.root);
                     println!("Created:    {}", status.created_at);
                     println!("Exists:     {}", if status.exists { "yes" } else { "no" });
-                    println!("DB:         {} ({} bytes)",
+                    println!(
+                        "DB:         {} ({} bytes)",
                         if status.db_exists { "yes" } else { "no" },
                         status.db_size_bytes,
                     );
-                    println!("Adapters:   {}", if status.adapters_configured { "configured" } else { "not configured" });
+                    println!(
+                        "Adapters:   {}",
+                        if status.adapters_configured {
+                            "configured"
+                        } else {
+                            "not configured"
+                        }
+                    );
                 }
                 BandCommand::Create { name, isolation } => {
                     let level = match isolation.as_str() {
@@ -365,7 +374,9 @@ async fn main() -> Result<()> {
             let status = std::process::Command::new("aish-tui").status();
             if let Err(e) = status {
                 eprintln!("Failed to start TUI: {}", e);
-                eprintln!("Make sure 'aish-tui' is installed (cargo install --path crates/aish-tui)");
+                eprintln!(
+                    "Make sure 'aish-tui' is installed (cargo install --path crates/aish-tui)"
+                );
             }
         }
 

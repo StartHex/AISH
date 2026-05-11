@@ -52,7 +52,6 @@ impl MockAgentState {
             token_output: AtomicU64::new(0),
         }
     }
-
 }
 
 fn text_content(text: &str) -> CallToolResult {
@@ -87,169 +86,257 @@ pub fn build_mock_server() -> McpServer {
     // ---- Agent Management tools ----
 
     let s = state.clone();
-    server.register_tool("agent.status", "Get agent current status", json!({}), move |_args| {
-        let s = s.clone();
-        async move {
-            let model = s.model.lock().await.clone();
-            Ok(json_content(json!({
-                "status": "online",
-                "uptime_secs": 3600,
-                "model": model,
-                "tasks_active": s.tasks.lock().await.len(),
-            })))
-        }
-    });
+    server.register_tool(
+        "agent.status",
+        "Get agent current status",
+        json!({}),
+        move |_args| {
+            let s = s.clone();
+            async move {
+                let model = s.model.lock().await.clone();
+                Ok(json_content(json!({
+                    "status": "online",
+                    "uptime_secs": 3600,
+                    "model": model,
+                    "tasks_active": s.tasks.lock().await.len(),
+                })))
+            }
+        },
+    );
 
-    server.register_tool("agent.list_models", "List available models", json!({}), move |_args| {
-        async move {
+    server.register_tool(
+        "agent.list_models",
+        "List available models",
+        json!({}),
+        move |_args| async move {
             Ok(json_content(json!([
                 {"id": "mock-model-v1", "provider": "mock", "context_window": 200000},
                 {"id": "mock-model-v2", "provider": "mock", "context_window": 500000},
                 {"id": "mock-model-fast", "provider": "mock", "context_window": 100000},
             ])))
-        }
-    });
+        },
+    );
 
     let s = state.clone();
-    server.register_tool("agent.set_model", "Switch model", json!({"model": "string"}), move |args| {
-        let s = s.clone();
-        async move {
-            let model = args["model"].as_str().unwrap_or("unknown").to_string();
-            let old = s.model.lock().await.clone();
-            *s.model.lock().await = model.clone();
-            Ok(text_content(&format!("Model switched: {} → {}", old, model)))
-        }
-    });
-
-    let s = state.clone();
-    server.register_tool("agent.permissions", "Get permission matrix", json!({}), move |_args| {
-        let s = s.clone();
-        async move {
-            Ok(json_content(json!({
-                "entries": *s.permissions.lock().await,
-                "default_permit": "Ask",
-            })))
-        }
-    });
-
-    let s = state.clone();
-    server.register_tool("agent.set_permission", "Set tool permission", json!({"tool":"string","permit":"string"}), move |args| {
-        let s = s.clone();
-        async move {
-            let tool = args["tool"].as_str().unwrap_or("");
-            let permit = args["permit"].as_str().unwrap_or("Ask");
-            let mut perms = s.permissions.lock().await;
-            for p in perms.iter_mut() {
-                if p["tool_name"].as_str() == Some(tool) {
-                    let old = p["permit"].as_str().unwrap_or("?").to_string();
-                    p["permit"] = json!(permit);
-                    return Ok(text_content(&format!("Permission changed: {} {} → {}", tool, old, permit)));
-                }
+    server.register_tool(
+        "agent.set_model",
+        "Switch model",
+        json!({"model": "string"}),
+        move |args| {
+            let s = s.clone();
+            async move {
+                let model = args["model"].as_str().unwrap_or("unknown").to_string();
+                let old = s.model.lock().await.clone();
+                *s.model.lock().await = model.clone();
+                Ok(text_content(&format!(
+                    "Model switched: {} → {}",
+                    old, model
+                )))
             }
-            Ok(text_content(&format!("Tool '{}' not found in permission list", tool)))
-        }
-    });
+        },
+    );
 
     let s = state.clone();
-    server.register_tool("agent.skills", "List registered skills", json!({}), move |_args| {
-        let s = s.clone();
-        async move { Ok(json_content(json!(*s.skills.lock().await))) }
-    });
+    server.register_tool(
+        "agent.permissions",
+        "Get permission matrix",
+        json!({}),
+        move |_args| {
+            let s = s.clone();
+            async move {
+                Ok(json_content(json!({
+                    "entries": *s.permissions.lock().await,
+                    "default_permit": "Ask",
+                })))
+            }
+        },
+    );
 
     let s = state.clone();
-    server.register_tool("agent.mcp_servers", "List connected MCP servers", json!({}), move |_args| {
-        let s = s.clone();
-        async move { Ok(json_content(json!(*s.mcp_servers.lock().await))) }
-    });
-
-    let s = state.clone();
-    server.register_tool("agent.token_usage", "Get token statistics", json!({"window": "string"}), move |_args| {
-        let s = s.clone();
-        async move {
-            Ok(json_content(json!({
-                "total_input": s.token_input.load(std::sync::atomic::Ordering::Relaxed),
-                "total_output": s.token_output.load(std::sync::atomic::Ordering::Relaxed),
-                "by_model": {
-                    "mock-model-v1": {
-                        "input": s.token_input.load(std::sync::atomic::Ordering::Relaxed),
-                        "output": s.token_output.load(std::sync::atomic::Ordering::Relaxed),
-                        "requests": 15,
+    server.register_tool(
+        "agent.set_permission",
+        "Set tool permission",
+        json!({"tool":"string","permit":"string"}),
+        move |args| {
+            let s = s.clone();
+            async move {
+                let tool = args["tool"].as_str().unwrap_or("");
+                let permit = args["permit"].as_str().unwrap_or("Ask");
+                let mut perms = s.permissions.lock().await;
+                for p in perms.iter_mut() {
+                    if p["tool_name"].as_str() == Some(tool) {
+                        let old = p["permit"].as_str().unwrap_or("?").to_string();
+                        p["permit"] = json!(permit);
+                        return Ok(text_content(&format!(
+                            "Permission changed: {} {} → {}",
+                            tool, old, permit
+                        )));
                     }
-                },
-            })))
-        }
-    });
+                }
+                Ok(text_content(&format!(
+                    "Tool '{}' not found in permission list",
+                    tool
+                )))
+            }
+        },
+    );
+
+    let s = state.clone();
+    server.register_tool(
+        "agent.skills",
+        "List registered skills",
+        json!({}),
+        move |_args| {
+            let s = s.clone();
+            async move { Ok(json_content(json!(*s.skills.lock().await))) }
+        },
+    );
+
+    let s = state.clone();
+    server.register_tool(
+        "agent.mcp_servers",
+        "List connected MCP servers",
+        json!({}),
+        move |_args| {
+            let s = s.clone();
+            async move { Ok(json_content(json!(*s.mcp_servers.lock().await))) }
+        },
+    );
+
+    let s = state.clone();
+    server.register_tool(
+        "agent.token_usage",
+        "Get token statistics",
+        json!({"window": "string"}),
+        move |_args| {
+            let s = s.clone();
+            async move {
+                Ok(json_content(json!({
+                    "total_input": s.token_input.load(std::sync::atomic::Ordering::Relaxed),
+                    "total_output": s.token_output.load(std::sync::atomic::Ordering::Relaxed),
+                    "by_model": {
+                        "mock-model-v1": {
+                            "input": s.token_input.load(std::sync::atomic::Ordering::Relaxed),
+                            "output": s.token_output.load(std::sync::atomic::Ordering::Relaxed),
+                            "requests": 15,
+                        }
+                    },
+                })))
+            }
+        },
+    );
 
     // ---- Task Management tools ----
 
     let s = state.clone();
-    server.register_tool("task.submit", "Submit a new task", json!({"prompt":"string"}), move |args| {
-        let s = s.clone();
-        async move {
-            let prompt = args["prompt"].as_str().unwrap_or("");
-            let task_id = format!("mock-task-{}", Utc::now().timestamp_millis());
-            let task = MockTask {
-                id: task_id.clone(),
-                prompt: prompt.to_string(),
-                status: "queued".to_string(),
-                progress: 0.0,
-            };
-            s.tasks.lock().await.push(task);
+    server.register_tool(
+        "task.submit",
+        "Submit a new task",
+        json!({"prompt":"string"}),
+        move |args| {
+            let s = s.clone();
+            async move {
+                let prompt = args["prompt"].as_str().unwrap_or("");
+                let task_id = format!("mock-task-{}", Utc::now().timestamp_millis());
+                let task = MockTask {
+                    id: task_id.clone(),
+                    prompt: prompt.to_string(),
+                    status: "queued".to_string(),
+                    progress: 0.0,
+                };
+                s.tasks.lock().await.push(task);
 
-            // Simulate some token usage
-            s.token_input.fetch_add(prompt.len() as u64 / 4, std::sync::atomic::Ordering::Relaxed);
-            s.token_output.fetch_add(200, std::sync::atomic::Ordering::Relaxed);
+                // Simulate some token usage
+                s.token_input.fetch_add(
+                    prompt.len() as u64 / 4,
+                    std::sync::atomic::Ordering::Relaxed,
+                );
+                s.token_output
+                    .fetch_add(200, std::sync::atomic::Ordering::Relaxed);
 
-            Ok(text_content(&format!("Task submitted: {}", task_id)))
-        }
-    });
-
-    let s = state.clone();
-    server.register_tool("task.list", "List tasks", json!({"filter":"object"}), move |_args| {
-        let s = s.clone();
-        async move {
-            let tasks: Vec<Value> = s.tasks.lock().await.iter().map(|t| {
-                json!({
-                    "id": t.id,
-                    "prompt_preview": &t.prompt[..t.prompt.len().min(100)],
-                    "status": t.status,
-                    "progress": t.progress,
-                })
-            }).collect();
-            Ok(json_content(json!(tasks)))
-        }
-    });
-
-    let s = state.clone();
-    server.register_tool("task.cancel", "Cancel a task", json!({"task_id":"string"}), move |args| {
-        let tid = args["task_id"].as_str().unwrap_or("").to_string();
-        let s = s.clone();
-        async move {
-            let mut tasks = s.tasks.lock().await;
-            if let Some(t) = tasks.iter_mut().find(|t| t.id == tid) {
-                t.status = "cancelled".to_string();
-                Ok(text_content(&format!("Task {} cancelled", tid)))
-            } else {
-                Ok(text_content(&format!("Task {} not found", tid)))
+                Ok(text_content(&format!("Task submitted: {}", task_id)))
             }
-        }
-    });
+        },
+    );
+
+    let s = state.clone();
+    server.register_tool(
+        "task.list",
+        "List tasks",
+        json!({"filter":"object"}),
+        move |_args| {
+            let s = s.clone();
+            async move {
+                let tasks: Vec<Value> = s
+                    .tasks
+                    .lock()
+                    .await
+                    .iter()
+                    .map(|t| {
+                        json!({
+                            "id": t.id,
+                            "prompt_preview": &t.prompt[..t.prompt.len().min(100)],
+                            "status": t.status,
+                            "progress": t.progress,
+                        })
+                    })
+                    .collect();
+                Ok(json_content(json!(tasks)))
+            }
+        },
+    );
+
+    let s = state.clone();
+    server.register_tool(
+        "task.cancel",
+        "Cancel a task",
+        json!({"task_id":"string"}),
+        move |args| {
+            let tid = args["task_id"].as_str().unwrap_or("").to_string();
+            let s = s.clone();
+            async move {
+                let mut tasks = s.tasks.lock().await;
+                if let Some(t) = tasks.iter_mut().find(|t| t.id == tid) {
+                    t.status = "cancelled".to_string();
+                    Ok(text_content(&format!("Task {} cancelled", tid)))
+                } else {
+                    Ok(text_content(&format!("Task {} not found", tid)))
+                }
+            }
+        },
+    );
 
     // ---- Adapter metadata ----
 
-    server.register_tool("adapter.version", "Get adapter version", json!({}), |_args| async move {
-        Ok(text_content("mock-adapter v0.1.0"))
-    });
+    server.register_tool(
+        "adapter.version",
+        "Get adapter version",
+        json!({}),
+        |_args| async move { Ok(text_content("mock-adapter v0.1.0")) },
+    );
 
-    server.register_tool("adapter.capabilities", "Get adapter capabilities", json!({}), |_args| async move {
-        Ok(json_content(json!([
-            "agent.status", "agent.list_models", "agent.set_model",
-            "agent.permissions", "agent.set_permission", "agent.skills",
-            "agent.mcp_servers", "agent.token_usage",
-            "task.submit", "task.list", "task.cancel",
-            "adapter.version", "adapter.capabilities",
-        ])))
-    });
+    server.register_tool(
+        "adapter.capabilities",
+        "Get adapter capabilities",
+        json!({}),
+        |_args| async move {
+            Ok(json_content(json!([
+                "agent.status",
+                "agent.list_models",
+                "agent.set_model",
+                "agent.permissions",
+                "agent.set_permission",
+                "agent.skills",
+                "agent.mcp_servers",
+                "agent.token_usage",
+                "task.submit",
+                "task.list",
+                "task.cancel",
+                "adapter.version",
+                "adapter.capabilities",
+            ])))
+        },
+    );
 
     server
 }
@@ -263,19 +350,28 @@ mod tests {
         let server = build_mock_server();
 
         // Initialize
-        let init_resp = server.handle_request("initialize", Some(1), json!({
-            "protocolVersion": "2024-11-05",
-            "clientInfo": {"name": "test", "version": "1.0"},
-        })).await;
+        let init_resp = server
+            .handle_request(
+                "initialize",
+                Some(1),
+                json!({
+                    "protocolVersion": "2024-11-05",
+                    "clientInfo": {"name": "test", "version": "1.0"},
+                }),
+            )
+            .await;
         assert!(init_resp.is_some());
 
         // List tools
-        let tools_resp = server.handle_request("tools/list", Some(2), Value::Null).await;
+        let tools_resp = server
+            .handle_request("tools/list", Some(2), Value::Null)
+            .await;
         assert!(tools_resp.is_some());
 
         let tools_val = tools_resp.unwrap();
         let tools: Vec<String> = tools_val["result"]["tools"]
-            .as_array().unwrap()
+            .as_array()
+            .unwrap()
             .iter()
             .map(|t| t["name"].as_str().unwrap().to_string())
             .collect();
@@ -289,15 +385,27 @@ mod tests {
     #[tokio::test]
     async fn test_mock_server_agent_status() {
         let server = build_mock_server();
-        server.handle_request("initialize", Some(1), json!({
-            "protocolVersion": "2024-11-05",
-            "clientInfo": {"name": "test", "version": "1.0"},
-        })).await;
+        server
+            .handle_request(
+                "initialize",
+                Some(1),
+                json!({
+                    "protocolVersion": "2024-11-05",
+                    "clientInfo": {"name": "test", "version": "1.0"},
+                }),
+            )
+            .await;
 
-        let resp = server.handle_request("tools/call", Some(3), json!({
-            "name": "agent.status",
-            "arguments": {}
-        })).await;
+        let resp = server
+            .handle_request(
+                "tools/call",
+                Some(3),
+                json!({
+                    "name": "agent.status",
+                    "arguments": {}
+                }),
+            )
+            .await;
         assert!(resp.is_some());
 
         let val = resp.unwrap();
@@ -310,41 +418,71 @@ mod tests {
     #[tokio::test]
     async fn test_mock_server_task_submit_and_list() {
         let server = build_mock_server();
-        server.handle_request("initialize", Some(1), json!({
-            "protocolVersion": "2024-11-05",
-            "clientInfo": {"name": "test", "version": "1.0"},
-        })).await;
+        server
+            .handle_request(
+                "initialize",
+                Some(1),
+                json!({
+                    "protocolVersion": "2024-11-05",
+                    "clientInfo": {"name": "test", "version": "1.0"},
+                }),
+            )
+            .await;
 
         // Submit a task
-        let resp = server.handle_request("tools/call", Some(3), json!({
-            "name": "task.submit",
-            "arguments": {"prompt": "explain main.rs"}
-        })).await;
+        let resp = server
+            .handle_request(
+                "tools/call",
+                Some(3),
+                json!({
+                    "name": "task.submit",
+                    "arguments": {"prompt": "explain main.rs"}
+                }),
+            )
+            .await;
         assert!(resp.is_some());
         let val = resp.unwrap();
         let text = val["result"]["content"][0]["text"].as_str().unwrap();
         assert!(text.contains("Task submitted"));
 
         // List tasks
-        let resp = server.handle_request("tools/call", Some(4), json!({
-            "name": "task.list",
-            "arguments": {}
-        })).await;
+        let resp = server
+            .handle_request(
+                "tools/call",
+                Some(4),
+                json!({
+                    "name": "task.list",
+                    "arguments": {}
+                }),
+            )
+            .await;
         assert!(resp.is_some());
     }
 
     #[tokio::test]
     async fn test_mock_server_set_model() {
         let server = build_mock_server();
-        server.handle_request("initialize", Some(1), json!({
-            "protocolVersion": "2024-11-05",
-            "clientInfo": {"name": "test", "version": "1.0"},
-        })).await;
+        server
+            .handle_request(
+                "initialize",
+                Some(1),
+                json!({
+                    "protocolVersion": "2024-11-05",
+                    "clientInfo": {"name": "test", "version": "1.0"},
+                }),
+            )
+            .await;
 
-        let resp = server.handle_request("tools/call", Some(3), json!({
-            "name": "agent.set_model",
-            "arguments": {"model": "mock-model-v2"}
-        })).await;
+        let resp = server
+            .handle_request(
+                "tools/call",
+                Some(3),
+                json!({
+                    "name": "agent.set_model",
+                    "arguments": {"model": "mock-model-v2"}
+                }),
+            )
+            .await;
         let val = resp.unwrap();
         let text = val["result"]["content"][0]["text"].as_str().unwrap();
         assert!(text.contains("mock-model-v1"));
@@ -354,15 +492,27 @@ mod tests {
     #[tokio::test]
     async fn test_mock_server_permissions() {
         let server = build_mock_server();
-        server.handle_request("initialize", Some(1), json!({
-            "protocolVersion": "2024-11-05",
-            "clientInfo": {"name": "test", "version": "1.0"},
-        })).await;
+        server
+            .handle_request(
+                "initialize",
+                Some(1),
+                json!({
+                    "protocolVersion": "2024-11-05",
+                    "clientInfo": {"name": "test", "version": "1.0"},
+                }),
+            )
+            .await;
 
-        let resp = server.handle_request("tools/call", Some(3), json!({
-            "name": "agent.permissions",
-            "arguments": {}
-        })).await;
+        let resp = server
+            .handle_request(
+                "tools/call",
+                Some(3),
+                json!({
+                    "name": "agent.permissions",
+                    "arguments": {}
+                }),
+            )
+            .await;
         let val = resp.unwrap();
         let text = val["result"]["content"][0]["text"].as_str().unwrap();
         assert!(text.contains("Bash"));
@@ -372,15 +522,27 @@ mod tests {
     #[tokio::test]
     async fn test_mock_server_token_usage() {
         let server = build_mock_server();
-        server.handle_request("initialize", Some(1), json!({
-            "protocolVersion": "2024-11-05",
-            "clientInfo": {"name": "test", "version": "1.0"},
-        })).await;
+        server
+            .handle_request(
+                "initialize",
+                Some(1),
+                json!({
+                    "protocolVersion": "2024-11-05",
+                    "clientInfo": {"name": "test", "version": "1.0"},
+                }),
+            )
+            .await;
 
-        let resp = server.handle_request("tools/call", Some(3), json!({
-            "name": "agent.token_usage",
-            "arguments": {"window": "today"}
-        })).await;
+        let resp = server
+            .handle_request(
+                "tools/call",
+                Some(3),
+                json!({
+                    "name": "agent.token_usage",
+                    "arguments": {"window": "today"}
+                }),
+            )
+            .await;
         let val = resp.unwrap();
         let text = val["result"]["content"][0]["text"].as_str().unwrap();
         assert!(text.contains("total_input"));

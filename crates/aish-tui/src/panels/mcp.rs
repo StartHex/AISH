@@ -41,10 +41,17 @@ pub fn render_mcp(f: &mut Frame, app: &App, area: Rect) {
 
     let table = Table::new(rows, widths)
         .header(
-            Row::new(vec!["Server", "Status", "Tools"])
-                .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Row::new(vec!["Server", "Status", "Tools"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
         )
-        .block(Block::default().borders(Borders::ALL).title(" MCP Servers "))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" MCP Servers "),
+        )
         .column_spacing(2);
 
     f.render_widget(table, area);

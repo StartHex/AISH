@@ -1,5 +1,7 @@
 //! Application state and types for the AISH TUI.
 
+#![allow(dead_code)]
+
 use aish_core::types::{AgentId, AgentStatus, Permit, TaskId, TaskStatus};
 use chrono::{DateTime, Utc};
 
@@ -603,7 +605,8 @@ impl App {
                     selected: true,
                     result: Some(FanOutResult {
                         status: "Done".into(),
-                        summary: "Found 2 issues: SQL injection in login(), missing rate limiting".into(),
+                        summary: "Found 2 issues: SQL injection in login(), missing rate limiting"
+                            .into(),
                     }),
                 },
                 FanOutTarget {
@@ -637,20 +640,28 @@ impl App {
 
     pub fn select_prev_agent(&mut self) {
         if !self.agents.is_empty() {
-            self.agent_selected =
-                self.agent_selected.checked_sub(1).unwrap_or(self.agents.len() - 1);
+            self.agent_selected = self
+                .agent_selected
+                .checked_sub(1)
+                .unwrap_or(self.agents.len() - 1);
         }
     }
 
     pub fn next_tab(&mut self) {
         let tabs = Tab::all();
-        let idx = tabs.iter().position(|t| *t == self.selected_tab).unwrap_or(0);
+        let idx = tabs
+            .iter()
+            .position(|t| *t == self.selected_tab)
+            .unwrap_or(0);
         self.selected_tab = tabs[(idx + 1) % tabs.len()];
     }
 
     pub fn prev_tab(&mut self) {
         let tabs = Tab::all();
-        let idx = tabs.iter().position(|t| *t == self.selected_tab).unwrap_or(0);
+        let idx = tabs
+            .iter()
+            .position(|t| *t == self.selected_tab)
+            .unwrap_or(0);
         self.selected_tab = tabs[idx.checked_sub(1).unwrap_or(tabs.len() - 1)];
     }
 }

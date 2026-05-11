@@ -20,13 +20,13 @@ fn main() {
 
     // Fallback: try PySide6 GUI, then suggest daemon + TUI
     eprintln!("AISH GUI: native Qt build not available.");
-    eprintln!("");
+    eprintln!();
     eprintln!("Options:");
     eprintln!("  1. Use the TUI:  aish tui");
     eprintln!("  2. Start the daemon + Python GUI:");
     eprintln!("     aish daemon &");
     eprintln!("     python3 crates/aish-gui/python/main.py");
-    eprintln!("");
+    eprintln!();
     eprintln!("  3. Build with Qt support:");
     eprintln!("     brew install qt@6");
     eprintln!("     cargo build -p aish-gui --features gui-native");

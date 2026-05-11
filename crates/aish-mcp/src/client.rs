@@ -31,9 +31,7 @@ impl McpClient {
         let params = InitializeParams {
             protocol_version: "2024-11-05".into(),
             capabilities: ClientCapabilities {
-                roots: Some(RootsCapability {
-                    list_changed: true,
-                }),
+                roots: Some(RootsCapability { list_changed: true }),
                 sampling: None,
             },
             client_info: ClientInfo {
@@ -42,7 +40,9 @@ impl McpClient {
             },
         };
 
-        let result = self.call("initialize", Some(serde_json::to_value(params)?)).await?;
+        let result = self
+            .call("initialize", Some(serde_json::to_value(params)?))
+            .await?;
         let init_result: InitializeResult = serde_json::from_value(result)?;
 
         info!(
@@ -71,14 +71,18 @@ impl McpClient {
             name: name.to_string(),
             arguments,
         };
-        let result = self.call("tools/call", Some(serde_json::to_value(params)?)).await?;
+        let result = self
+            .call("tools/call", Some(serde_json::to_value(params)?))
+            .await?;
         let tool_result: CallToolResult = serde_json::from_value(result)?;
         Ok(tool_result)
     }
 
     /// Low-level JSON-RPC call with auto-generated id.
     pub async fn call(&self, method: &str, params: Option<Value>) -> Result<Value> {
-        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let id = self
+            .next_id
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         let request = JsonRpcRequest::new(id, method, params);
 
         let response = self.transport.send(&request).await?;

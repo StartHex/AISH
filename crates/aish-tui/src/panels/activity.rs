@@ -10,9 +10,10 @@ use crate::app::App;
 
 pub fn render_activity(f: &mut Frame, app: &App, area: Rect) {
     if app.activity_log.is_empty() {
-        let empty = Paragraph::new("No activity yet.\n\nTool calls will appear here as agents work.")
-            .block(Block::default().borders(Borders::ALL).title(" Activity "))
-            .style(Style::default().fg(Color::DarkGray));
+        let empty =
+            Paragraph::new("No activity yet.\n\nTool calls will appear here as agents work.")
+                .block(Block::default().borders(Borders::ALL).title(" Activity "))
+                .style(Style::default().fg(Color::DarkGray));
         f.render_widget(empty, area);
         return;
     }
@@ -33,10 +34,7 @@ pub fn render_activity(f: &mut Frame, app: &App, area: Rect) {
             let mut spans = vec![
                 Span::styled(time, Style::default().fg(Color::DarkGray)),
                 Span::raw("  "),
-                Span::styled(
-                    agent_name,
-                    Style::default().fg(Color::Cyan),
-                ),
+                Span::styled(agent_name, Style::default().fg(Color::Cyan)),
                 Span::raw("  "),
             ];
 

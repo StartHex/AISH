@@ -28,9 +28,15 @@ impl From<&str> for AgentId {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TaskId(pub Uuid);
 
+impl Default for TaskId {
+    fn default() -> Self {
+        TaskId(Uuid::new_v4())
+    }
+}
+
 impl TaskId {
     pub fn new() -> Self {
-        TaskId(Uuid::new_v4())
+        Self::default()
     }
 }
 
@@ -118,18 +124,13 @@ pub struct TaskRequest {
     pub priority: Priority,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Priority {
     Low = 0,
+    #[default]
     Normal = 1,
     High = 2,
     Critical = 3,
-}
-
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Normal
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

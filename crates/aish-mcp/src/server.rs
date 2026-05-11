@@ -15,7 +15,10 @@ use tracing::{debug, error, info, warn};
 
 /// Signature of a tool handler function.
 pub type ToolHandler = Arc<
-    dyn Fn(Value) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<CallToolResult>> + Send>>
+    dyn Fn(
+            Value,
+        )
+            -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<CallToolResult>> + Send>>
         + Send
         + Sync,
 >;
@@ -48,8 +51,13 @@ impl McpServer {
     }
 
     /// Register a tool with its handler.
-    pub fn register_tool<F, Fut>(&mut self, name: &str, description: &str, input_schema: Value, handler: F)
-    where
+    pub fn register_tool<F, Fut>(
+        &mut self,
+        name: &str,
+        description: &str,
+        input_schema: Value,
+        handler: F,
+    ) where
         F: Fn(Value) -> Fut + Send + Sync + 'static,
         Fut: std::future::Future<Output = Result<CallToolResult>> + Send + 'static,
     {
@@ -62,10 +70,8 @@ impl McpServer {
             let fut = handler(args);
             Box::pin(fut)
         });
-        self.tools.insert(
-            name.to_string(),
-            ToolDef { tool, handler },
-        );
+        self.tools
+            .insert(name.to_string(), ToolDef { tool, handler });
     }
 
     /// Send a notification to all connected clients.
@@ -136,7 +142,12 @@ impl McpServer {
     }
 
     /// Handle a single JSON-RPC request. Returns None for notifications.
-    pub async fn handle_request(&self, method: &str, id: Option<u64>, params: Value) -> Option<Value> {
+    pub async fn handle_request(
+        &self,
+        method: &str,
+        id: Option<u64>,
+        params: Value,
+    ) -> Option<Value> {
         match method {
             "initialize" => {
                 let result = self.handle_initialize(params);
@@ -154,37 +165,32 @@ impl McpServer {
                 Some(serde_json::to_value(resp).unwrap())
             }
             "tools/call" => {
-                let tool_name = params
-                    .get("name")
-                    .and_then(|n| n.as_str())
-                    .unwrap_or("");
+                let tool_name = params.get("name").and_then(|n| n.as_str()).unwrap_or("");
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
 
                 match self.tools.get(tool_name) {
-                    Some(def) => {
-                        match (def.handler)(args).await {
-                            Ok(result) => {
-                                let content = result
-                                    .content
-                                    .into_iter()
-                                    .map(|c| serde_json::to_value(c).unwrap())
-                                    .collect::<Vec<_>>();
-                                let resp = JsonRpcResponse::success(
-                                    id.unwrap_or(0),
-                                    serde_json::json!({ "content": content, "isError": result.is_error }),
-                                );
-                                Some(serde_json::to_value(resp).unwrap())
-                            }
-                            Err(e) => {
-                                let resp = JsonRpcResponse::error(
-                                    Some(id.unwrap_or(0)),
-                                    error_codes::INTERNAL_ERROR,
-                                    &format!("Tool error: {}", e),
-                                );
-                                Some(serde_json::to_value(resp).unwrap())
-                            }
+                    Some(def) => match (def.handler)(args).await {
+                        Ok(result) => {
+                            let content = result
+                                .content
+                                .into_iter()
+                                .map(|c| serde_json::to_value(c).unwrap())
+                                .collect::<Vec<_>>();
+                            let resp = JsonRpcResponse::success(
+                                id.unwrap_or(0),
+                                serde_json::json!({ "content": content, "isError": result.is_error }),
+                            );
+                            Some(serde_json::to_value(resp).unwrap())
                         }
-                    }
+                        Err(e) => {
+                            let resp = JsonRpcResponse::error(
+                                Some(id.unwrap_or(0)),
+                                error_codes::INTERNAL_ERROR,
+                                &format!("Tool error: {}", e),
+                            );
+                            Some(serde_json::to_value(resp).unwrap())
+                        }
+                    },
                     None => {
                         let resp = JsonRpcResponse::error(
                             Some(id.unwrap_or(0)),

@@ -39,7 +39,10 @@ pub fn render_agents(f: &mut Frame, app: &App, area: Rect) {
             // Status line
             let mut status_line = vec![Span::raw("  ")];
             match &agent.status {
-                AgentStatus::Online { uptime: _, model: _ } => {
+                AgentStatus::Online {
+                    uptime: _,
+                    model: _,
+                } => {
                     status_line.push(Span::styled(
                         format!("Online · uptime {}", agent.uptime),
                         Style::default().fg(Color::Green),
@@ -105,7 +108,10 @@ pub fn render_agents(f: &mut Frame, app: &App, area: Rect) {
                     "░".repeat(empty),
                     (progress * 100.0) as u8
                 );
-                lines.push(Line::from(Span::styled(bar, Style::default().fg(Color::Yellow))));
+                lines.push(Line::from(Span::styled(
+                    bar,
+                    Style::default().fg(Color::Yellow),
+                )));
             }
 
             // Spacer

@@ -144,7 +144,11 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
         }
     }
 
-    info!(current = current_version, latest = MIGRATIONS.len(), "Migrations up to date");
+    info!(
+        current = current_version,
+        latest = MIGRATIONS.len(),
+        "Migrations up to date"
+    );
     Ok(())
 }
 

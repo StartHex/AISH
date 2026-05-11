@@ -45,9 +45,7 @@ pub enum TransportConfig {
         remote_command: String,
     },
     #[serde(rename = "unix")]
-    Unix {
-        path: PathBuf,
-    },
+    Unix { path: PathBuf },
     #[serde(rename = "tcp")]
     Tcp {
         host: String,

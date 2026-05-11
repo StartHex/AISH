@@ -38,17 +38,19 @@ impl AgentHandle {
                 });
             }
             AgentStatus::Offline { since } => {
-                self.event_bus.publish(crate::event::BusEvent::AgentOffline {
-                    agent: self.id.clone(),
-                    reason: "connection lost".into(),
-                    since: *since,
-                });
+                self.event_bus
+                    .publish(crate::event::BusEvent::AgentOffline {
+                        agent: self.id.clone(),
+                        reason: "connection lost".into(),
+                        since: *since,
+                    });
             }
             AgentStatus::Degraded { reason, .. } => {
-                self.event_bus.publish(crate::event::BusEvent::AgentDegraded {
-                    agent: self.id.clone(),
-                    reason: reason.clone(),
-                });
+                self.event_bus
+                    .publish(crate::event::BusEvent::AgentDegraded {
+                        agent: self.id.clone(),
+                        reason: reason.clone(),
+                    });
             }
             _ => {}
         }
@@ -71,24 +73,26 @@ impl AgentRegistry {
     /// Register an adapter from its definition (does not connect yet).
     pub fn register(&self, def: &crate::config::AdapterDef) -> AgentHandle {
         let connection_type = match &def.transport {
-            crate::config::TransportConfig::Stdio { command, args, env } => {
-                ConnectionType::Stdio {
-                    command: command.clone(),
-                    args: args.clone(),
-                    env: env.clone(),
-                }
-            }
-            crate::config::TransportConfig::Ssh { host, port, user, key_path, remote_command: _ } => {
-                ConnectionType::Ssh {
-                    host: host.clone(),
-                    port: *port,
-                    user: user.clone(),
-                    key_path: key_path.clone(),
-                }
-            }
-            crate::config::TransportConfig::Unix { path } => ConnectionType::UnixSocket {
-                path: path.clone(),
+            crate::config::TransportConfig::Stdio { command, args, env } => ConnectionType::Stdio {
+                command: command.clone(),
+                args: args.clone(),
+                env: env.clone(),
             },
+            crate::config::TransportConfig::Ssh {
+                host,
+                port,
+                user,
+                key_path,
+                remote_command: _,
+            } => ConnectionType::Ssh {
+                host: host.clone(),
+                port: *port,
+                user: user.clone(),
+                key_path: key_path.clone(),
+            },
+            crate::config::TransportConfig::Unix { path } => {
+                ConnectionType::UnixSocket { path: path.clone() }
+            }
             crate::config::TransportConfig::Tcp { host, port, tls } => ConnectionType::Tcp {
                 host: host.clone(),
                 port: *port,
@@ -113,7 +117,11 @@ impl AgentRegistry {
 
     /// Load and register all adapters from config file.
     pub fn load_from_config(&self, config: &AdaptersConfig) -> Vec<AgentHandle> {
-        config.adapters.iter().map(|def| self.register(def)).collect()
+        config
+            .adapters
+            .iter()
+            .map(|def| self.register(def))
+            .collect()
     }
 
     /// Get an agent by ID.
@@ -130,7 +138,12 @@ impl AgentRegistry {
     pub fn online(&self) -> Vec<AgentHandle> {
         self.agents
             .iter()
-            .filter(|r| matches!(*r.value().status.read(), AgentStatus::Online { .. } | AgentStatus::Busy { .. }))
+            .filter(|r| {
+                matches!(
+                    *r.value().status.read(),
+                    AgentStatus::Online { .. } | AgentStatus::Busy { .. }
+                )
+            })
             .map(|r| r.value().clone())
             .collect()
     }

@@ -37,7 +37,11 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         .iter()
         .filter(|a| matches!(a.status, aish_core::types::AgentStatus::Busy { .. }))
         .count();
-    let total_tokens: u64 = app.agents.iter().map(|a| a.tokens_input + a.tokens_output).sum();
+    let total_tokens: u64 = app
+        .agents
+        .iter()
+        .map(|a| a.tokens_input + a.tokens_output)
+        .sum();
 
     let text = format!(
         " AISH v0.1 · {} online ({} busy) · {} tasks · {}k tokens · F1:Help ",
@@ -47,8 +51,7 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         total_tokens / 1000,
     );
 
-    let bar = Paragraph::new(text)
-        .style(Style::default().fg(Color::Black).bg(Color::DarkGray));
+    let bar = Paragraph::new(text).style(Style::default().fg(Color::Black).bg(Color::DarkGray));
 
     f.render_widget(bar, area);
 }

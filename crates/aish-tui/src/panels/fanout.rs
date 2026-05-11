@@ -51,8 +51,16 @@ pub fn render_fanout(f: &mut Frame, app: &App, area: Rect) {
             .iter()
             .map(|t| {
                 let check = if t.selected { "☑" } else { "☐" };
-                let online = if t.online { "(online)" } else { "(offline — skipped)" };
-                let status_color = if t.online { Color::Green } else { Color::DarkGray };
+                let online = if t.online {
+                    "(online)"
+                } else {
+                    "(offline — skipped)"
+                };
+                let status_color = if t.online {
+                    Color::Green
+                } else {
+                    Color::DarkGray
+                };
                 Line::from(vec![
                     Span::raw(format!(" {} {} ", check, t.agent)),
                     Span::styled(online, Style::default().fg(status_color)),
@@ -61,7 +69,8 @@ pub fn render_fanout(f: &mut Frame, app: &App, area: Rect) {
             .collect();
 
         f.render_widget(
-            Paragraph::new(target_text).block(Block::default().borders(Borders::ALL).title(" Targets ")),
+            Paragraph::new(target_text)
+                .block(Block::default().borders(Borders::ALL).title(" Targets ")),
             chunks[2],
         );
 
@@ -78,8 +87,14 @@ pub fn render_fanout(f: &mut Frame, app: &App, area: Rect) {
                         _ => ("?", Color::Gray),
                     };
                     let lines = vec![Line::from(vec![
-                        Span::styled(format!("{} {}  ", icon, t.agent), Style::default().fg(color)),
-                        Span::styled(&r.status, Style::default().fg(color).add_modifier(Modifier::BOLD)),
+                        Span::styled(
+                            format!("{} {}  ", icon, t.agent),
+                            Style::default().fg(color),
+                        ),
+                        Span::styled(
+                            &r.status,
+                            Style::default().fg(color).add_modifier(Modifier::BOLD),
+                        ),
                         Span::raw("  "),
                         Span::styled(&r.summary, Style::default().fg(Color::Gray)),
                     ])];

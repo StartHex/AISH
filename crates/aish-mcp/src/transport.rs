@@ -17,8 +17,14 @@ use tracing::{trace, warn};
 
 #[derive(Debug, Clone)]
 pub enum ReceivedMessage {
-    Response { id: u64, result: serde_json::Value },
-    Notification { method: String, params: serde_json::Value },
+    Response {
+        id: u64,
+        result: serde_json::Value,
+    },
+    Notification {
+        method: String,
+        params: serde_json::Value,
+    },
 }
 
 // ---- Transport trait ----
@@ -88,11 +94,17 @@ impl StdioTransport {
                     if value.get("method").is_some() {
                         // It's a request (server→client) — treat as notification
                         let method = value["method"].as_str().unwrap_or("").to_string();
-                        let params = value.get("params").cloned().unwrap_or(serde_json::Value::Null);
+                        let params = value
+                            .get("params")
+                            .cloned()
+                            .unwrap_or(serde_json::Value::Null);
                         let _ = notif_tx.send(ReceivedMessage::Notification { method, params });
                     } else {
                         // It's a response
-                        let result = value.get("result").cloned().unwrap_or(serde_json::Value::Null);
+                        let result = value
+                            .get("result")
+                            .cloned()
+                            .unwrap_or(serde_json::Value::Null);
                         if let Some((_, tx)) = pending_r.remove(&id) {
                             let _ = tx.send(result);
                         } else {
@@ -102,7 +114,10 @@ impl StdioTransport {
                 } else if value.get("method").is_some() {
                     // Notification (no id)
                     let method = value["method"].as_str().unwrap_or("").to_string();
-                    let params = value.get("params").cloned().unwrap_or(serde_json::Value::Null);
+                    let params = value
+                        .get("params")
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null);
                     let _ = notif_tx.send(ReceivedMessage::Notification { method, params });
                 }
             }
@@ -237,8 +252,12 @@ impl Transport for UnixSocketTransport {
         let (_, rx) = broadcast::channel(1);
         rx
     }
-    async fn is_alive(&self) -> bool { false }
-    async fn shutdown(&self) -> Result<()> { Ok(()) }
+    async fn is_alive(&self) -> bool {
+        false
+    }
+    async fn shutdown(&self) -> Result<()> {
+        Ok(())
+    }
 }
 
 pub struct TcpTransport;
@@ -252,6 +271,10 @@ impl Transport for TcpTransport {
         let (_, rx) = broadcast::channel(1);
         rx
     }
-    async fn is_alive(&self) -> bool { false }
-    async fn shutdown(&self) -> Result<()> { Ok(()) }
+    async fn is_alive(&self) -> bool {
+        false
+    }
+    async fn shutdown(&self) -> Result<()> {
+        Ok(())
+    }
 }

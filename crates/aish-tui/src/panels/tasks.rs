@@ -11,9 +11,11 @@ use aish_core::types::TaskStatus;
 
 pub fn render_tasks(f: &mut Frame, app: &App, area: Rect) {
     if app.tasks.is_empty() {
-        let empty = Paragraph::new("No tasks yet.\n\nSubmit a task with `aish exec` or use the command bar.")
-            .block(Block::default().borders(Borders::ALL).title(" Tasks "))
-            .style(Style::default().fg(Color::DarkGray));
+        let empty = Paragraph::new(
+            "No tasks yet.\n\nSubmit a task with `aish exec` or use the command bar.",
+        )
+        .block(Block::default().borders(Borders::ALL).title(" Tasks "))
+        .style(Style::default().fg(Color::DarkGray));
         f.render_widget(empty, area);
         return;
     }

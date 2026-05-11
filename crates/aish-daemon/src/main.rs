@@ -11,7 +11,9 @@ use aish_mcp::server::McpServer;
 use aish_mcp::types::{CallToolResult, ContentItem};
 use serde_json::{json, Value};
 use std::sync::Arc;
-use tokio::net::{TcpListener, UnixListener};
+use tokio::net::TcpListener;
+#[cfg(unix)]
+use tokio::net::UnixListener;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
@@ -49,24 +51,29 @@ fn build_daemon_server(
     // --- agent.list ---
     {
         let r = registry.clone();
-        server.register_tool("agent.list", "List all registered agents", json!({}), move |_| {
-            let r = r.clone();
-            async move {
-                let agents: Vec<Value> = r
-                    .list()
-                    .iter()
-                    .map(|h| {
-                        json!({
-                            "id": h.id.to_string(),
-                            "alias": h.alias,
-                            "status": format!("{:?}", h.status()),
-                            "default_model": h.default_model,
+        server.register_tool(
+            "agent.list",
+            "List all registered agents",
+            json!({}),
+            move |_| {
+                let r = r.clone();
+                async move {
+                    let agents: Vec<Value> = r
+                        .list()
+                        .iter()
+                        .map(|h| {
+                            json!({
+                                "id": h.id.to_string(),
+                                "alias": h.alias,
+                                "status": format!("{:?}", h.status()),
+                                "default_model": h.default_model,
+                            })
                         })
-                    })
-                    .collect();
-                Ok(json_content(json!(agents)))
-            }
-        });
+                        .collect();
+                    Ok(json_content(json!(agents)))
+                }
+            },
+        );
     }
 
     // --- agent.status ---
@@ -96,27 +103,32 @@ fn build_daemon_server(
     // --- agent.count ---
     {
         let r = registry.clone();
-        server.register_tool("agent.count", "Count agents by status", json!({}), move |_| {
-            let r = r.clone();
-            async move {
-                let all = r.list();
-                let online = all
-                    .iter()
-                    .filter(|h| {
-                        matches!(
-                            h.status(),
-                            AgentStatus::Online { .. } | AgentStatus::Busy { .. }
-                        )
-                    })
-                    .count();
-                let total = all.len();
-                Ok(json_content(json!({
-                    "total": total,
-                    "online": online,
-                    "offline": total - online,
-                })))
-            }
-        });
+        server.register_tool(
+            "agent.count",
+            "Count agents by status",
+            json!({}),
+            move |_| {
+                let r = r.clone();
+                async move {
+                    let all = r.list();
+                    let online = all
+                        .iter()
+                        .filter(|h| {
+                            matches!(
+                                h.status(),
+                                AgentStatus::Online { .. } | AgentStatus::Busy { .. }
+                            )
+                        })
+                        .count();
+                    let total = all.len();
+                    Ok(json_content(json!({
+                        "total": total,
+                        "online": online,
+                        "offline": total - online,
+                    })))
+                }
+            },
+        );
     }
 
     // --- task.list ---
@@ -152,19 +164,24 @@ fn build_daemon_server(
     // --- task.count ---
     {
         let s = scheduler.clone();
-        server.register_tool("task.count", "Count tasks by status", json!({}), move |_| {
-            let s = s.clone();
-            async move {
-                let filter = TaskFilter {
-                    agent_id: None,
-                    status: None,
-                    limit: None,
-                    offset: None,
-                };
-                let total = s.list(&filter).len();
-                Ok(json_content(json!({ "total": total })))
-            }
-        });
+        server.register_tool(
+            "task.count",
+            "Count tasks by status",
+            json!({}),
+            move |_| {
+                let s = s.clone();
+                async move {
+                    let filter = TaskFilter {
+                        agent_id: None,
+                        status: None,
+                        limit: None,
+                        offset: None,
+                    };
+                    let total = s.list(&filter).len();
+                    Ok(json_content(json!({ "total": total })))
+                }
+            },
+        );
     }
 
     // --- daemon.ping ---
@@ -173,13 +190,22 @@ fn build_daemon_server(
     });
 
     // --- daemon.version ---
-    server.register_tool("daemon.version", "Get daemon version", json!({}), |_| async move {
-        Ok(text_content(concat!("aish-daemon v", env!("CARGO_PKG_VERSION"))))
-    });
+    server.register_tool(
+        "daemon.version",
+        "Get daemon version",
+        json!({}),
+        |_| async move {
+            Ok(text_content(concat!(
+                "aish-daemon v",
+                env!("CARGO_PKG_VERSION")
+            )))
+        },
+    );
 
     server
 }
 
+#[cfg(unix)]
 fn expand_tilde(path: &str) -> String {
     if path.starts_with('~') {
         if let Ok(home) = std::env::var("HOME") {
@@ -189,6 +215,7 @@ fn expand_tilde(path: &str) -> String {
     path.to_string()
 }
 
+#[cfg(unix)]
 async fn run_unix_socket(server: Arc<McpServer>, path: &str) -> anyhow::Result<()> {
     let expanded = expand_tilde(path);
 
@@ -262,6 +289,7 @@ async fn main() -> anyhow::Result<()> {
     let mcp_cfg = &config.mcp_server;
     let mut tasks = tokio::task::JoinSet::new();
 
+    #[cfg(unix)]
     if mcp_cfg.unix_socket.enabled {
         let s = server.clone();
         let socket_path = mcp_cfg
@@ -276,6 +304,10 @@ async fn main() -> anyhow::Result<()> {
                 error!("Unix socket listener failed: {}", e);
             }
         });
+    }
+    #[cfg(not(unix))]
+    if mcp_cfg.unix_socket.enabled {
+        info!("Unix socket not supported on this platform, use TCP instead");
     }
 
     if mcp_cfg.tcp.enabled {

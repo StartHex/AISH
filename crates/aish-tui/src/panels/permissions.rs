@@ -30,10 +30,7 @@ pub fn render_permissions(f: &mut Frame, app: &App, area: Rect) {
                 aish_core::types::Permit::Ask => Color::Yellow,
             };
 
-            let last = p
-                .last_changed
-                .as_deref()
-                .unwrap_or("-- (default)");
+            let last = p.last_changed.as_deref().unwrap_or("-- (default)");
 
             Row::new(vec![
                 p.tool.clone(),
@@ -54,10 +51,17 @@ pub fn render_permissions(f: &mut Frame, app: &App, area: Rect) {
 
     let table = Table::new(rows, widths)
         .header(
-            Row::new(vec!["Tool", "Permit", "Description", "Last Changed"])
-                .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            Row::new(vec!["Tool", "Permit", "Description", "Last Changed"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
         )
-        .block(Block::default().borders(Borders::ALL).title(" Permissions "))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Permissions "),
+        )
         .column_spacing(1);
 
     f.render_widget(table, area);

@@ -66,8 +66,12 @@ impl Band {
 
         // Write default adapters.ron for this band
         let default_adapters = crate::config::AdaptersConfig { adapters: vec![] };
-        let adapters_ron = ron::ser::to_string_pretty(&default_adapters, ron::ser::PrettyConfig::default())?;
-        fs::write(root.join("config").join("aish").join("adapters.ron"), adapters_ron)?;
+        let adapters_ron =
+            ron::ser::to_string_pretty(&default_adapters, ron::ser::PrettyConfig::default())?;
+        fs::write(
+            root.join("config").join("aish").join("adapters.ron"),
+            adapters_ron,
+        )?;
 
         info!(%name, root = %root.display(), "Band created");
         Ok(band)
@@ -121,16 +125,29 @@ impl Band {
     pub fn env_vars(&self) -> Vec<(String, String)> {
         vec![
             ("AISH_BAND".into(), self.name.clone()),
-            ("AISH_BAND_ROOT".into(), self.root.to_string_lossy().to_string()),
-            ("HOME".into(), self.root.join("home").to_string_lossy().to_string()),
+            (
+                "AISH_BAND_ROOT".into(),
+                self.root.to_string_lossy().to_string(),
+            ),
+            (
+                "HOME".into(),
+                self.root.join("home").to_string_lossy().to_string(),
+            ),
             (
                 "XDG_CONFIG_HOME".into(),
                 self.root.join("config").to_string_lossy().to_string(),
             ),
-            ("TMPDIR".into(), self.root.join("tmp").to_string_lossy().to_string()),
+            (
+                "TMPDIR".into(),
+                self.root.join("tmp").to_string_lossy().to_string(),
+            ),
             (
                 "AISH_DB_PATH".into(),
-                self.root.join("data").join("aish.db").to_string_lossy().to_string(),
+                self.root
+                    .join("data")
+                    .join("aish.db")
+                    .to_string_lossy()
+                    .to_string(),
             ),
         ]
     }
@@ -186,7 +203,12 @@ mod tests {
         assert_eq!(band.name, "test-band");
         assert!(band.root.join("band.toml").exists());
         assert!(band.root.join("home").exists());
-        assert!(band.root.join("config").join("aish").join("adapters.ron").exists());
+        assert!(band
+            .root
+            .join("config")
+            .join("aish")
+            .join("adapters.ron")
+            .exists());
 
         let list = Band::list(&bands_root).unwrap();
         assert_eq!(list.len(), 1);

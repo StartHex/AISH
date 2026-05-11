@@ -56,8 +56,8 @@ async fn run_event_loop<B: Backend>(
                         KeyCode::BackTab => app.prev_tab(),
                         KeyCode::Char('j') | KeyCode::Down => {
                             if app.selected_tab == app::Tab::Tasks {
-                                app.task_selected = (app.task_selected + 1)
-                                    .min(app.tasks.len().saturating_sub(1));
+                                app.task_selected =
+                                    (app.task_selected + 1).min(app.tasks.len().saturating_sub(1));
                             }
                             if app.selected_tab == app::Tab::Activity {
                                 app.activity_selected = (app.activity_selected + 1)

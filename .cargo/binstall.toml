@@ -1,0 +1,22 @@
+# cargo-binstall metadata for AISH
+# Enables: cargo binstall aish
+
+[package]
+name = "aish"
+version = "0.1.0"
+description = "AI Agent Shell — unified terminal manager for multiple AI coding agents"
+repository = "https://github.com/aish/aish"
+license = "MIT"
+
+# Binary artifacts published to GitHub Releases
+[[bin]]
+name = "aish"
+path = "aish"
+
+[[bin]]
+name = "aish-tui"
+path = "aish-tui"
+
+[[bin]]
+name = "aishd"
+path = "aishd"

@@ -1,0 +1,28 @@
+[package]
+name = "aish-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+dashmap.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+parking_lot.workspace = true
+dirs.workspace = true
+notify.workspace = true
+ron = "0.8"
+toml = "0.8"
+tempfile.workspace = true
+
+[dev-dependencies]
+aish-store.workspace = true
+aish-mcp.workspace = true

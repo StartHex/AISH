@@ -1,0 +1,24 @@
+# Rust build artifacts
+target/
+debug/
+*.rs.bk
+*.pdb
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.*
+
+# Bands (user data)
+bands/
+~/.aish/

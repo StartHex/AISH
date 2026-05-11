@@ -1,0 +1,22 @@
+[package]
+name = "aish-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "aish"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "env"] }
+tokio.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+dirs.workspace = true
+ron = "0.8"
+
+aish-core.workspace = true
+aish-mcp.workspace = true
+aish-store.workspace = true

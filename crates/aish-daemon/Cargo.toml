@@ -1,0 +1,23 @@
+[package]
+name = "aish-daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "aishd"
+path = "src/main.rs"
+
+[dependencies]
+tokio.workspace = true
+tokio-stream = "0.1"
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+futures.workspace = true
+
+aish-core.workspace = true
+aish-mcp.workspace = true
+aish-store.workspace = true

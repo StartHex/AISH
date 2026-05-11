@@ -19,16 +19,23 @@ use std::time::Duration;
 async fn main() -> anyhow::Result<()> {
     enable_raw_mode()?;
     let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+
+    // Ensure alternate screen is entered before starting
+    execute!(stdout, EnterAlternateScreen, crossterm::cursor::Hide)?;
+
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
+    terminal.clear()?;
 
     let app = App::new();
     let result = run_event_loop(&mut terminal, app).await;
 
     disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        crossterm::cursor::Show
+    )?;
 
     result
 }

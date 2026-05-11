@@ -124,7 +124,7 @@ impl Default for DaemonConfig {
                     path: Some(PathBuf::from("~/.aish/daemon.sock")),
                 },
                 tcp: TcpConfig {
-                    enabled: false,
+                    enabled: true,
                     bind: "127.0.0.1".into(),
                     port: 9876,
                     tls: None,

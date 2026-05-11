@@ -29,7 +29,7 @@ jobs:
         include:
           - os: macos-latest
             target: aarch64-apple-darwin
-          - os: macos-13
+          - os: macos-14
             target: x86_64-apple-darwin
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
@@ -92,7 +92,7 @@ jobs:
           7z a ../aish-${{ matrix.target }}.zip *
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: aish-${{ matrix.target }}
           path: |
@@ -107,7 +107,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts
 
@@ -118,26 +118,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: "AISH ${{ github.ref_name }}"
-          body: |
-            ## AISH ${{ github.ref_name }}
-
-            ### Install
-            ```bash
-            # Download the binary for your platform and run:
-            ./aish --version
-            ```
-
-            ### Binaries
-            - `aish` — CLI
-            - `aish-tui` — Terminal UI
-            - `aishd` — Daemon (Unix socket + TCP)
-
-            ### Platforms
-            - macOS Apple Silicon (aarch64)
-            - macOS Intel (x86_64)
-            - Linux (x86_64, static musl)
-            - Windows (x86_64)
+          generate_release_notes: true
+          make_latest: true
           files: |
             artifacts/**/aish-*.tar.gz
             artifacts/**/aish-*.zip
-          fail_on_unmatched_files: false
